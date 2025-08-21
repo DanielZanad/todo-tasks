@@ -21,14 +21,15 @@ export function useCreateUser() {
       return result;
     },
     async onSuccess(data: CreateUserResponse, variables, context) {
-      // const response = await fetch(data.url, {
-      //   method: "PUT",
-      //   headers: {
-      //     "Content-Type": variables.file_key?.type ?? "image/jpeg",
-      //   },
-      //   body: variables.file_key,
-      // });
-      // console.log("response", response);
+      console.log("API url:", data.url);
+      const response = await fetch(data.url, {
+        method: "PUT",
+        headers: {
+          "Content-Type": variables.file_key?.type ?? "image/jpeg",
+        },
+        body: variables.file_key,
+      });
+      console.log("response", response);
     },
   });
 }
