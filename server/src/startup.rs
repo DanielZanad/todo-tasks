@@ -1,8 +1,25 @@
 use std::net::TcpListener;
 
 use actix_cors::Cors;
-use actix_web::{App, HttpResponse, HttpServer, Responder, dev::Server, get, http, web};
-use sqlx::PgPool;
+use actix_web::{
+    App, HttpResponse, HttpServer, Responder,
+    dev::Server,
+    get, http,
+    web::{self, Data},
+};
+use sqlx::{PgPool, Pool, Postgres};
+
+use crate::routes::register_user::register_user;
+
+pub struct AppState {
+    pub conn: PgPool,
+}
+
+impl AppState {
+    pub fn new(conn: PgPool) -> Self {
+        Self { conn }
+    }
+}
 
 #[get("/")]
 async fn health_check() -> impl Responder {
@@ -10,7 +27,7 @@ async fn health_check() -> impl Responder {
 }
 
 pub fn run(listener: TcpListener, db_pool: PgPool) -> Result<Server, std::io::Error> {
-    let connection = web::Data::new(db_pool);
+    let app_data = web::Data::new(AppState::new(db_pool));
     let server = HttpServer::new(move || {
         let cors = Cors::default()
             .allowed_origin("http://localhost:5173")
@@ -21,7 +38,8 @@ pub fn run(listener: TcpListener, db_pool: PgPool) -> Result<Server, std::io::Er
         App::new()
             .wrap(cors)
             .service(health_check)
-            .app_data(connection.clone())
+            .service(register_user)
+            .app_data(app_data.clone())
     })
     .listen(listener)?
     .run();

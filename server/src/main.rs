@@ -4,6 +4,7 @@ use crate::{db::configuration::get_configuration, env::get_env_var};
 
 pub mod db;
 pub mod env;
+pub mod routes;
 pub mod startup;
 
 #[actix_web::main]
