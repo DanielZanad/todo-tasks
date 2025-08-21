@@ -14,6 +14,8 @@ import {
   FormLabel,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { useCreateUser } from "@/http/use-create-users";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import z from "zod";
@@ -30,13 +32,27 @@ const createUserSchema = z.object({
 type createUserData = z.infer<typeof createUserSchema>;
 
 export const SignUp = () => {
-  const form = useForm<createUserData>();
+  const { mutateAsync: createUser } = useCreateUser();
+  const form = useForm<createUserData>({
+    resolver: zodResolver(createUserSchema),
+    defaultValues: {
+      username: "",
+      email: "",
+      password: "",
+      avatar: undefined,
+    },
+  });
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
 
-  function handleSignUpUser(data: createUserData) {
-    console.log(data);
+  async function handleSignUpUser(user: createUserData) {
+    const result = await createUser({
+      username: user.username,
+      email: user.email,
+      password: user.password,
+      file_key: user.avatar,
+      mime_type: user.avatar.type,
+    });
   }
-
   return (
     <div className="flex items-center justify-center min-h-screen">
       <Card className="w-full max-w-3xl">
