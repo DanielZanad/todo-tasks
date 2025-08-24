@@ -6,7 +6,9 @@ use actix_web::{App, HttpResponse, HttpServer, Responder, dev::Server, get, http
 use sqlx::PgPool;
 
 use crate::{
-    app::use_cases::register_user_use_case::RegisterUserUseCase,
+    app::use_cases::{
+        get_signed_url_use_case::GetSignedUrlUseCase, register_user_use_case::RegisterUserUseCase,
+    },
     infra::{
         db::sqlx_repository::SqlxRepository, http::register_user_controller::register_user_route,
     },
@@ -30,6 +32,7 @@ async fn health_check() -> impl Responder {
 pub fn run(listener: TcpListener) -> Result<Server, std::io::Error> {
     let register_user_use_case =
         web::Data::new(RegisterUserUseCase::new(Arc::new(SqlxRepository {})));
+    let get_signed_url_use_case = web::Data::new(GetSignedUrlUseCase::new());
 
     let server = HttpServer::new(move || {
         let cors = Cors::default()
@@ -43,6 +46,7 @@ pub fn run(listener: TcpListener) -> Result<Server, std::io::Error> {
             .service(health_check)
             .service(register_user_route)
             .app_data(register_user_use_case.clone())
+            .app_data(get_signed_url_use_case.clone())
     })
     .listen(listener)?
     .run();

@@ -70,7 +70,5 @@ impl UserRepository for SqlxRepository {
                 .map_err(|e| eprintln!("Failed to commit the transaction: {}", e))
                 .unwrap()
         })
-
-        // --- Start a database transaction ---
     }
 }

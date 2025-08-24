@@ -83,5 +83,8 @@ server/
 
 ## Notes
 
-- The `target/` folder (Rust build artifacts) and `node_modules/` in `signed_url_api/` are ignored.
 - The architecture is designed for extensibility and clear separation between domain, infrastructure, and business logic.
+
+## API Endpoints
+
+(Coming Soon: Detailed API endpoint documentation will be added here.)

@@ -1,10 +1,13 @@
-use actix_web::{Error, HttpResponse, post, web};
+use actix_web::{Error, HttpResponse, error, post, web};
 use serde::{Deserialize, Serialize};
 
-use crate::app::use_cases::register_user_use_case;
+use crate::{
+    app::use_cases::{get_signed_url_use_case, register_user_use_case},
+    env::get_env_var,
+};
 
 #[derive(Deserialize, Serialize, Debug)]
-struct User {
+struct Body {
     email: String,
     username: String,
     password: String,
@@ -14,20 +17,45 @@ struct User {
 
 #[post("/users")]
 pub async fn register_user_route(
-    user: web::Json<User>,
-    register_user: web::Data<register_user_use_case::RegisterUserUseCase>,
+    request_body: web::Json<Body>,
+    register_user_use_case: web::Data<register_user_use_case::RegisterUserUseCase>,
+    get_signed_url_use_case: web::Data<get_signed_url_use_case::GetSignedUrlUseCase>,
 ) -> Result<HttpResponse, Error> {
     println!("Registering user");
 
-    let request = register_user_use_case::RegisterUserRequest::new(
-        user.email.to_owned(),
-        user.username.to_owned(),
-        user.password.to_owned(),
-        user.file_key.to_owned(),
-        user.mime_type.to_owned(),
+    let mut file_key = request_body
+        .file_key
+        .clone()
+        .unwrap_or_else(|| get_env_var("DEFAULT_AVATAR").expect("DEFAULT_AVATAR must be set"));
+
+    let mime_type = request_body
+        .mime_type
+        .clone()
+        .unwrap_or_else(|| String::from("image/jpeg"));
+
+    file_key = format!("{file_key}-{}", uuid::Uuid::new_v4());
+
+    let register_user_request = register_user_use_case::RegisterUserRequest::new(
+        request_body.email.to_owned(),
+        request_body.username.to_owned(),
+        request_body.password.to_owned(),
+        file_key.clone(),
+        mime_type.clone(),
     );
 
-    let response = register_user.execute(request).await;
+    let get_signed_url_request = get_signed_url_use_case::GetSignedUrlUseCaseRequest::new(
+        file_key.clone(),
+        mime_type.clone(),
+    );
 
-    Ok(HttpResponse::Ok().json(serde_json::json!({ "url": response.url })))
+    register_user_use_case.execute(register_user_request).await;
+    let response = get_signed_url_use_case
+        .execute(get_signed_url_request)
+        .await
+        .map_err(|e| {
+            eprintln!("Failed to get signed URL: {}", e);
+            error::ErrorInternalServerError("Failed to process request")
+        })?;
+
+    Ok(HttpResponse::Ok().json(serde_json::json!({ "url":  response.url})))
 }
