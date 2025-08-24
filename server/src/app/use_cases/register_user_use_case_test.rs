@@ -39,6 +39,13 @@ mod tests {
             ));
             Box::pin(async {})
         }
+
+        fn get_user_by_email<'a>(
+            &'a self,
+            email: String,
+        ) -> Pin<Box<dyn Future<Output = Option<User>> + Send + 'a>> {
+            todo!()
+        }
     }
 
     #[actix_web::test]

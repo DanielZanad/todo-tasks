@@ -37,8 +37,6 @@ impl UserRepository for SqlxRepository {
         .map_err(|e| {
             eprintln!("Failed to create user: {}", e);
             error::ErrorInternalServerError("Failed to register user.")
-        }).map_err(|e| {
-            eprintln!("Failed to create an user: {}", e)
         }).unwrap();
 
             let user_id = new_user.id;
@@ -69,6 +67,50 @@ impl UserRepository for SqlxRepository {
                 })
                 .map_err(|e| eprintln!("Failed to commit the transaction: {}", e))
                 .unwrap()
+        })
+    }
+
+    fn get_user_by_email<'a>(
+        &'a self,
+        email: String,
+    ) -> std::pin::Pin<Box<dyn Future<Output = Option<User>> + Send + 'a>> {
+        Box::pin(async move {
+            let db_conn = get_configuration().await.unwrap();
+
+            let mut transaction = db_conn
+                .begin()
+                .await
+                .map_err(|_| {
+                    error::ErrorInternalServerError("Failed to start database transaction.")
+                })
+                .map_err(|e| eprint!("Failed to start a transaction: {}", e))
+                .unwrap();
+
+            let user = sqlx::query!("SELECT * FROM users WHERE email = $1", email)
+                .fetch_one(&mut *transaction)
+                .await
+                .map_err(|e| {
+                    eprintln!("Failed to an user by email: {}", e);
+                    error::ErrorInternalServerError("Failed to get an user by email.")
+                })
+                .ok()?;
+
+            transaction
+                .commit()
+                .await
+                .map_err(|_| {
+                    error::ErrorInternalServerError("Failed to commit database transaction.")
+                })
+                .map_err(|e| eprintln!("Failed to commit the transaction: {}", e))
+                .unwrap();
+
+            let user = User::new_with_id(
+                user.id.to_string(),
+                user.email,
+                user.username,
+                user.password_hash,
+            );
+            Some(user)
         })
     }
 }

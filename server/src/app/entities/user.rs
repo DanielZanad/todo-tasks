@@ -15,6 +15,15 @@ impl User {
         }
     }
 
+    pub fn new_with_id(id: String, email: String, username: String, password: String) -> Self {
+        Self {
+            id: Some(id),
+            email,
+            username,
+            password,
+        }
+    }
+
     // Getters
     pub fn id(&self) -> Option<&String> {
         self.id.as_ref()

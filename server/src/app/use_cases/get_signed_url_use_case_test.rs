@@ -1,5 +1,8 @@
 #[cfg(test)]
 mod tests {
+
+    // This test needs to be run with `cargo test -- --test-threads=1`
+
     use crate::app::use_cases::get_signed_url_use_case::{
         GetSignedUrlError, GetSignedUrlUseCase, GetSignedUrlUseCaseRequest, IncomingPayload,
     };

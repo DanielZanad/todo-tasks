@@ -2,7 +2,10 @@ use actix_web::{Error, HttpResponse, error, post, web};
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    app::use_cases::{get_signed_url_use_case, register_user_use_case},
+    app::use_cases::{
+        get_signed_url_use_case::{self, GetSignedUrlUseCase},
+        register_user_use_case::{self, RegisterUserUseCase},
+    },
     env::get_env_var,
 };
 
@@ -16,10 +19,10 @@ struct Body {
 }
 
 #[post("/users")]
-pub async fn register_user_route(
+pub async fn register_user_controller(
     request_body: web::Json<Body>,
-    register_user_use_case: web::Data<register_user_use_case::RegisterUserUseCase>,
-    get_signed_url_use_case: web::Data<get_signed_url_use_case::GetSignedUrlUseCase>,
+    register_user_use_case: web::Data<RegisterUserUseCase>,
+    get_signed_url_use_case: web::Data<GetSignedUrlUseCase>,
 ) -> Result<HttpResponse, Error> {
     println!("Registering user");
 
