@@ -19,6 +19,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Input } from "@/components/ui/input";
 import { Link } from "react-router-dom";
+import { useCreateSession } from "@/http/use-create-session";
 
 const loginUserSchema = z.object({
   email: z.email(),
@@ -28,6 +29,7 @@ const loginUserSchema = z.object({
 type loginUserSchemaData = z.infer<typeof loginUserSchema>;
 
 export const Login = () => {
+  const { mutateAsync: createSession } = useCreateSession();
   const form = useForm<loginUserSchemaData>({
     resolver: zodResolver(loginUserSchema),
     defaultValues: {
@@ -37,8 +39,7 @@ export const Login = () => {
   });
 
   function handleUserLogin({ email, password }: loginUserSchemaData) {
-    console.log("Email: ", email);
-    console.log("password: ", password);
+    const result = createSession({ email, password });
   }
 
   return (
