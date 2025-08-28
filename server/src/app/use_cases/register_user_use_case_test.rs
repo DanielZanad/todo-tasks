@@ -46,6 +46,13 @@ mod tests {
         ) -> Pin<Box<dyn Future<Output = Option<User>> + Send + 'a>> {
             todo!()
         }
+
+        fn get_user_profile<'a>(
+            &'a self,
+            user_id: String,
+        ) -> Pin<Box<dyn Future<Output = Option<User>> + Send>> {
+            todo!()
+        }
     }
 
     #[actix_web::test]

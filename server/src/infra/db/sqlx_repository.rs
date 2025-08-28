@@ -113,4 +113,11 @@ impl UserRepository for SqlxRepository {
             Some(user)
         })
     }
+
+    fn get_user_profile<'a>(
+        &'a self,
+        user_id: String,
+    ) -> std::pin::Pin<Box<dyn Future<Output = Option<User>> + Send>> {
+        todo!()
+    }
 }

@@ -1,12 +1,8 @@
 use actix_web::{Error, HttpResponse, error, post, web};
 use serde::{Deserialize, Serialize};
 
-use crate::{
-    app::use_cases::{
-        create_user_session_use_case::{CreateUserSessionRequest, CreateUserSessionUseCase},
-        get_signed_url_use_case, register_user_use_case,
-    },
-    env::get_env_var,
+use crate::app::use_cases::create_user_session_use_case::{
+    CreateUserSessionRequest, CreateUserSessionUseCase,
 };
 
 #[derive(Deserialize, Serialize, Debug)]

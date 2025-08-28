@@ -1,10 +1,7 @@
 use core::fmt;
 use std::sync::Arc;
 
-use argon2::{
-    Argon2, PasswordVerifier,
-    password_hash::{PasswordHasher, SaltString, rand_core},
-};
+use argon2::{Argon2, PasswordVerifier};
 use chrono::Utc;
 use jsonwebtoken::{Algorithm, EncodingKey, Header, encode, errors::Error};
 use serde::{Deserialize, Serialize};
@@ -38,6 +35,7 @@ impl CreateUserSessionResponse {
     }
 }
 
+#[derive(Debug)]
 pub enum CreateUserSessionError {
     InvalidCredentials(String),
 }
@@ -68,6 +66,7 @@ impl CreateUserSessionUseCase {
         let jwt_secret = std::env::var("JWT_SECRET").expect("JWT_SECRET must be set");
 
         let user = self.user_repository.get_user_by_email(request.email).await;
+
         if let Some(user) = user {
             let does_password_match = argon2::PasswordHash::new(&user.password())
                 .and_then(|hash| {

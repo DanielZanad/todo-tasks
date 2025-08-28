@@ -13,4 +13,8 @@ pub trait UserRepository {
         &'a self,
         email: String,
     ) -> Pin<Box<dyn Future<Output = Option<User>> + Send + 'a>>;
+    fn get_user_profile<'a>(
+        &'a self,
+        user_id: String,
+    ) -> Pin<Box<dyn Future<Output = Option<User>> + Send>>;
 }

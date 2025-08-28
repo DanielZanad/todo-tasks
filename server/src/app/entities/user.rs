@@ -1,3 +1,4 @@
+#[derive(Debug, Clone)]
 pub struct User {
     id: Option<String>,
     email: String,
