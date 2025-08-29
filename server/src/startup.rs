@@ -2,7 +2,9 @@ use std::net::TcpListener;
 use std::sync::Arc;
 
 use actix_cors::Cors;
-use actix_web::{App, HttpResponse, HttpServer, Responder, dev::Server, get, http, web};
+use actix_web::{
+    App, HttpResponse, HttpServer, Responder, dev::Server, get, http, middleware::from_fn, web,
+};
 use sqlx::PgPool;
 
 use crate::{
@@ -19,6 +21,7 @@ use crate::{
             get_user_profile_controller::get_user_profile_controller,
             register_user_controller::register_user_controller,
         },
+        middlewares::check_request_jwt::check_request_jwt,
     },
 };
 
@@ -58,7 +61,11 @@ pub fn run(listener: TcpListener) -> Result<Server, std::io::Error> {
             .service(health_check)
             .service(register_user_controller)
             .service(create_user_session_controller)
-            .service(get_user_profile_controller)
+            .service(
+                web::scope("/users")
+                    .wrap(from_fn(check_request_jwt))
+                    .service(get_user_profile_controller),
+            )
             .app_data(register_user_use_case.clone())
             .app_data(create_user_session_use_case.clone())
             .app_data(get_signed_url_use_case.clone())

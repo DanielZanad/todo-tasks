@@ -11,61 +11,11 @@ mod tests {
     };
 
     use crate::app::entities::user::User;
+    use crate::app::repositories::mock_user_repository::MockUserRepository;
     use crate::app::repositories::user_repository::UserRepository;
     use crate::app::use_cases::create_user_session_use_case::{
         CreateUserSessionError, CreateUserSessionRequest, CreateUserSessionUseCase,
     };
-
-    struct MockUserRepository {
-        users: Mutex<Vec<User>>,
-    }
-
-    impl MockUserRepository {
-        fn new() -> Self {
-            Self {
-                users: Mutex::new(vec![]),
-            }
-        }
-
-        fn add_user(&self, mut user: User) {
-            let salt = SaltString::generate(rand_core::OsRng);
-            let password_hash = Argon2::default()
-                .hash_password(user.password().as_bytes(), &salt)
-                .expect("Failed to hash password")
-                .to_string();
-            user.set_password(password_hash);
-            user.set_id(uuid::Uuid::new_v4().to_string());
-            self.users.lock().unwrap().push(user);
-        }
-    }
-
-    impl UserRepository for MockUserRepository {
-        fn register<'a>(
-            &'a self,
-            _user: User,
-            _file_key: String,
-            _mime_type: String,
-        ) -> Pin<Box<dyn Future<Output = ()> + Send + 'a>> {
-            todo!()
-        }
-
-        fn get_user_by_email<'a>(
-            &'a self,
-            email: String,
-        ) -> Pin<Box<dyn Future<Output = Option<User>> + Send + 'a>> {
-            let users = self.users.lock().unwrap();
-            let user = users.iter().find(|u| u.email() == email).cloned();
-
-            Box::pin(async move { user })
-        }
-
-        fn get_user_profile<'a>(
-            &'a self,
-            _user_id: String,
-        ) -> Pin<Box<dyn Future<Output = Option<User>> + Send>> {
-            todo!()
-        }
-    }
 
     fn setup() {
         unsafe {

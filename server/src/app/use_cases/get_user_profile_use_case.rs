@@ -1,14 +1,7 @@
 use core::fmt;
-use std::{collections::HashSet, sync::Arc};
+use std::sync::Arc;
 
-use argon2::{
-    Argon2, PasswordVerifier,
-    password_hash::{PasswordHasher, SaltString, rand_core},
-};
-use chrono::Utc;
-use jsonwebtoken::{
-    Algorithm, DecodingKey, EncodingKey, Header, Validation, decode, encode, errors::Error,
-};
+use jsonwebtoken::Header;
 use serde::{Deserialize, Serialize};
 
 use crate::app::{entities::user::User, repositories::user_repository::UserRepository};
@@ -32,12 +25,12 @@ impl Token {
 }
 
 pub struct GetUserProfileRequest {
-    pub token: String,
+    pub user_id: String,
 }
 
 impl GetUserProfileRequest {
-    pub fn new(token: String) -> Self {
-        Self { token }
+    pub fn new(user_id: String) -> Self {
+        Self { user_id }
     }
 }
 
@@ -78,35 +71,12 @@ impl GetUserProfileUseCase {
         &self,
         request: GetUserProfileRequest,
     ) -> Result<GetUserProfileResponse, GetUserProfileError> {
-        let jwt_secret = std::env::var("JWT_SECRET").expect("JWT_SECRET must be set");
-
-        let mut validation = jsonwebtoken::Validation::new(jsonwebtoken::Algorithm::HS512);
-
-        validation.required_spec_claims = HashSet::new();
-        validation.validate_aud = false;
-
-        let decode_token = decode::<Claims>(
-            &request.token,
-            &DecodingKey::from_secret(jwt_secret.as_ref()),
-            &validation,
+        let user = User::new(
+            String::from("email"),
+            String::from("username"),
+            String::from("password"),
         );
-
-        match decode_token {
-            Ok(token_data) => {
-                println!("Decoded claims: {:?}", token_data.claims);
-
-                let user = User::new(
-                    String::from("email"),
-                    String::from("username"),
-                    String::from("password"),
-                );
-                let response = GetUserProfileResponse::new(user);
-                Ok(response)
-            }
-            Err(e) => {
-                eprintln!("JWT Decode Error: {:?}", e);
-                panic!("Failed to decode token: {}", e);
-            }
-        }
+        let response = GetUserProfileResponse::new(user);
+        Ok(response)
     }
 }
