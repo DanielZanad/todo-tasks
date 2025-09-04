@@ -1,7 +1,7 @@
 #[cfg(test)]
 mod tests {
     use crate::app::entities::user::User;
-    use crate::app::repositories::user_repository::UserRepository;
+    use crate::app::repositories::user_repository::{UserProfile, UserRepository};
     use crate::app::use_cases::register_user_use_case::{RegisterUserRequest, RegisterUserUseCase};
     use argon2::Argon2;
     use argon2::password_hash::PasswordVerifier;
@@ -50,7 +50,7 @@ mod tests {
         fn get_user_profile<'a>(
             &'a self,
             user_id: String,
-        ) -> Pin<Box<dyn Future<Output = Option<User>> + Send>> {
+        ) -> Pin<Box<dyn Future<Output = Option<UserProfile>> + Send>> {
             todo!()
         }
     }

@@ -2,6 +2,17 @@ use std::{future::Future, pin::Pin};
 
 use crate::app::entities::user::User;
 
+pub struct UserProfile {
+    pub user: User,
+    pub avatar_url: String,
+}
+
+impl UserProfile {
+    pub fn set_avatar_url(&mut self, avatar_url: String) {
+        self.avatar_url = avatar_url;
+    }
+}
+
 pub trait UserRepository {
     fn register<'a>(
         &'a self,
@@ -16,5 +27,5 @@ pub trait UserRepository {
     fn get_user_profile<'a>(
         &'a self,
         user_id: String,
-    ) -> Pin<Box<dyn Future<Output = Option<User>> + Send>>;
+    ) -> Pin<Box<dyn Future<Output = Option<UserProfile>> + Send>>;
 }

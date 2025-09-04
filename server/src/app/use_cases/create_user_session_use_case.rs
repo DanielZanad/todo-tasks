@@ -81,7 +81,7 @@ impl CreateUserSessionUseCase {
             }
 
             let expiration = Utc::now()
-                .checked_add_signed(chrono::Duration::seconds(60))
+                .checked_add_signed(chrono::Duration::seconds(100000))
                 .expect("valid timestamp")
                 .timestamp();
 

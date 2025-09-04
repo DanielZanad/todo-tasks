@@ -24,7 +24,14 @@ pub async fn get_user_profile_controller(
 ) -> Result<HttpResponse, Error> {
     println!("Get user profile");
 
-    println!("Get user profile for user_id: {}", user.id);
+    let get_user_profile_request = GetUserProfileRequest::new(user.id.clone());
 
-    Ok(HttpResponse::Ok().body("data"))
+    let response = get_user_profile_use_case
+        .execute(get_user_profile_request)
+        .await;
+
+    match response {
+        Ok(user) => Ok(HttpResponse::Ok().json(serde_json::json!({ "username":  user.user_profile.user.username(), "email":  user.user_profile.user.email(), "avatar_url":  user.user_profile.avatar_url    }))),
+        Err(e) => Err(error::ErrorInternalServerError(e.to_string())),
+    }
 }

@@ -16,6 +16,15 @@ impl User {
         }
     }
 
+    pub fn new_without_password(email: String, username: String) -> Self {
+        Self {
+            id: None,
+            email,
+            username,
+            password: String::from(""),
+        }
+    }
+
     pub fn new_with_id(id: String, email: String, username: String, password: String) -> Self {
         Self {
             id: Some(id),

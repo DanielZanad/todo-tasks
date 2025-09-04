@@ -1,5 +1,6 @@
-use crate::app::entities::user::User;
-use crate::app::repositories::user_repository::UserRepository;
+use crate::app::entities::avatar;
+use crate::app::entities::{avatar::Avatar, user::User};
+use crate::app::repositories::user_repository::{UserProfile, UserRepository};
 use argon2::{
     Argon2,
     password_hash::{PasswordHasher, SaltString, rand_core},
@@ -11,6 +12,7 @@ use std::sync::{Arc, Mutex};
 #[derive(Clone, Default)]
 pub struct MockUserRepository {
     pub users: Arc<Mutex<Vec<User>>>,
+    pub avatars: Arc<Mutex<Vec<Avatar>>>,
 }
 
 impl MockUserRepository {
@@ -30,6 +32,14 @@ impl MockUserRepository {
         if user.id().is_none() {
             user.set_id(uuid::Uuid::new_v4().to_string());
         }
+        let avatar = Avatar::new(
+            uuid::Uuid::new_v4().to_string(),
+            user.id().unwrap().clone(),
+            String::from("file_key"),
+            String::from("mime_type"),
+        );
+
+        self.avatars.lock().unwrap().push(avatar);
         self.users.lock().unwrap().push(user);
     }
 
@@ -72,9 +82,26 @@ impl UserRepository for MockUserRepository {
     fn get_user_profile<'a>(
         &'a self,
         user_id: String,
-    ) -> Pin<Box<dyn Future<Output = Option<User>> + Send>> {
+    ) -> Pin<Box<dyn Future<Output = Option<UserProfile>> + Send>> {
         let users = self.users.lock().unwrap();
         let user = users.iter().find(|u| u.id() == Some(&user_id)).cloned();
-        Box::pin(async move { user })
+
+        match user {
+            Some(user) => {
+                let avatars = self.avatars.lock().unwrap();
+                let avatar = avatars.iter().find(|a| a.user_id() == user_id).cloned();
+                match avatar {
+                    Some(avatar) => {
+                        let user_profile = UserProfile {
+                            user,
+                            avatar_url: avatar.file_key().to_string(),
+                        };
+                        Box::pin(async move { Some(user_profile) })
+                    }
+                    None => Box::pin(async move { None }),
+                }
+            }
+            None => Box::pin(async move { None }),
+        }
     }
 }

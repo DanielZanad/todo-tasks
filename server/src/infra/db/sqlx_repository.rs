@@ -1,7 +1,10 @@
 use actix_web::error;
 
 use crate::{
-    app::{entities::user::User, repositories::user_repository::UserRepository},
+    app::{
+        entities::user::User,
+        repositories::user_repository::{UserProfile, UserRepository},
+    },
     infra::db::configuration::get_configuration,
 };
 
@@ -117,7 +120,54 @@ impl UserRepository for SqlxRepository {
     fn get_user_profile<'a>(
         &'a self,
         user_id: String,
-    ) -> std::pin::Pin<Box<dyn Future<Output = Option<User>> + Send>> {
-        todo!()
+    ) -> std::pin::Pin<Box<dyn Future<Output = Option<UserProfile>> + Send>> {
+        Box::pin(async move {
+            let db_conn = get_configuration().await.unwrap();
+
+            let mut transaction = db_conn
+                .begin()
+                .await
+                .map_err(|_| {
+                    error::ErrorInternalServerError("Failed to start database transaction.")
+                })
+                .map_err(|e| eprint!("Failed to start a transaction: {}", e))
+                .unwrap();
+
+            let user_profile = sqlx::query!(
+                "SELECT users.email, users.username, avatars.file_key FROM users INNER JOIN avatars ON $1 = avatars.user_id",
+                uuid::Uuid::parse_str(&user_id).unwrap()
+            )
+            .fetch_one(&mut *transaction)
+            .await
+            .map_err(|e| {
+                eprintln!("Failed to an user by email: {}", e);
+                error::ErrorInternalServerError("Failed to get an user by email.")
+            })
+            .ok();
+
+            match user_profile {
+                Some(user_profile) => {
+                    transaction
+                        .commit()
+                        .await
+                        .map_err(|_| {
+                            error::ErrorInternalServerError(
+                                "Failed to commit database transaction.",
+                            )
+                        })
+                        .map_err(|e| eprintln!("Failed to commit the transaction: {}", e))
+                        .unwrap();
+
+                    let user =
+                        User::new_without_password(user_profile.email, user_profile.username);
+                    let user_profile = UserProfile {
+                        user,
+                        avatar_url: user_profile.file_key,
+                    };
+                    Some(user_profile)
+                }
+                None => None,
+            }
+        })
     }
 }
