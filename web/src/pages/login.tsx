@@ -18,7 +18,7 @@ import z from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Input } from "@/components/ui/input";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useCreateSession } from "@/http/use-create-session";
 
 const loginUserSchema = z.object({
@@ -29,6 +29,7 @@ const loginUserSchema = z.object({
 type loginUserSchemaData = z.infer<typeof loginUserSchema>;
 
 export const Login = () => {
+  const navigate = useNavigate();
   const { mutateAsync: createSession } = useCreateSession();
   const form = useForm<loginUserSchemaData>({
     resolver: zodResolver(loginUserSchema),
@@ -38,8 +39,9 @@ export const Login = () => {
     },
   });
 
-  function handleUserLogin({ email, password }: loginUserSchemaData) {
-    const result = createSession({ email, password });
+  async function handleUserLogin({ email, password }: loginUserSchemaData) {
+    await createSession({ email, password });
+    navigate("/");
   }
 
   return (

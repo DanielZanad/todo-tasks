@@ -1,9 +1,9 @@
-import { Home } from "lucide-react";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 import { Login } from "./pages/login";
 import { SignUp } from "./pages/sign-up";
 import { ProtectedRoute } from "./pages/protected-route";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { Home } from "./pages/home";
 
 const queryClient = new QueryClient();
 
