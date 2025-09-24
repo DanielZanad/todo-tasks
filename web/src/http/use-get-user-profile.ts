@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import Cookies from "js-cookie";
 import type { GetUserProfileRequest } from "./types/get-user-profile-request";
+import type { GetUserProfileResponse } from "./types/get-user-profile-response";
 
 export function useGetUserProfile() {
   const queryClient = useQueryClient();
@@ -20,7 +21,7 @@ export function useGetUserProfile() {
         },
       });
 
-      const x = await response.json();
+      const x: GetUserProfileResponse = await response.json();
 
       return x;
     },

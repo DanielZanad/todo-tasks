@@ -36,7 +36,7 @@ pub struct IncomingPayload {
     pub url: String,
 }
 
-#[derive(Serialize)]
+#[derive(Serialize, Debug)]
 pub struct OutgoingPayload {
     file_key: String,
 }
@@ -101,8 +101,6 @@ impl GetUserProfileUseCase {
 
         match user_profile {
             Some(mut user_profile) => {
-                let payload = OutgoingPayload::new(user_profile.avatar_url.clone());
-
                 let result = client
                     .get(format!("{}/uploads/{}", api_url, user_profile.avatar_url))
                     .send()
