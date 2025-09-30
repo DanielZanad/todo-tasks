@@ -21,9 +21,9 @@ export function useGetUserProfile() {
         },
       });
 
-      const x: GetUserProfileResponse = await response.json();
+      const user: GetUserProfileResponse = await response.json();
 
-      return x;
+      return user;
     },
   });
 }
