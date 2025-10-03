@@ -1,21 +1,9 @@
-use actix_web::{Error, HttpResponse, error, get, post, web};
-use serde::{Deserialize, Serialize};
+use actix_web::{Error, HttpResponse, error, get, web};
 
 use crate::{
-    app::use_cases::{
-        create_user_session_use_case::{CreateUserSessionRequest, CreateUserSessionUseCase},
-        get_signed_url_use_case,
-        get_user_profile_use_case::{GetUserProfileRequest, GetUserProfileUseCase},
-        register_user_use_case,
-    },
-    env::get_env_var,
+    app::use_cases::get_user_profile_use_case::{GetUserProfileRequest, GetUserProfileUseCase},
     infra::middlewares::check_request_jwt::AuthenticatedUser,
 };
-
-#[derive(Deserialize, Serialize, Debug)]
-struct Body {
-    token: String,
-}
 
 #[get("/profile")]
 pub async fn get_user_profile_controller(

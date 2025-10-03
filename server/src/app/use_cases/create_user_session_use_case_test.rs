@@ -27,7 +27,7 @@ mod tests {
     async fn test_execute_with_valid_credentials_should_return_token() {
         // Arrange
         setup();
-        let mock_repo = Arc::new(MockUserRepository::new());
+        let mock_repo: Arc<MockUserRepository> = Arc::new(MockUserRepository::new());
         let email = "test@example.com".to_string();
         let password = "password123".to_string();
 

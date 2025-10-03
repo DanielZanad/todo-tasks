@@ -3,7 +3,10 @@ use actix_web::error;
 use crate::{
     app::{
         entities::user::User,
-        repositories::user_repository::{UserProfile, UserRepository},
+        repositories::{
+            task_repository::TaskRepository,
+            user_repository::{UserProfile, UserRepository},
+        },
     },
     infra::db::configuration::get_configuration,
 };
@@ -168,6 +171,69 @@ impl UserRepository for SqlxRepository {
                 }
                 None => None,
             }
+        })
+    }
+}
+
+impl TaskRepository for SqlxRepository {
+    fn save<'a>(
+        &'a self,
+        task: crate::app::entities::task::Task,
+    ) -> std::pin::Pin<Box<dyn Future<Output = ()> + Send + 'a>> {
+        Box::pin(async move {
+            let db_conn = get_configuration().await.unwrap();
+
+            let mut transaction = db_conn
+                .begin()
+                .await
+                .map_err(|_| {
+                    error::ErrorInternalServerError("Failed to start database transaction.")
+                })
+                .map_err(|e| eprint!("Failed to start a transaction: {}", e))
+                .unwrap();
+
+            let user = sqlx::query!(
+                "SELECT * FROM users WHERE id = $1",
+                uuid::Uuid::parse_str(&task.user_id()).unwrap()
+            );
+
+            if (user.fetch_one(&mut *transaction).await).is_err() {
+                transaction
+                    .rollback()
+                    .await
+                    .map_err(|_| {
+                        error::ErrorInternalServerError("Failed to rollback database transaction.")
+                    })
+                    .map_err(|e| eprintln!("Failed to rollback the transaction: {}", e))
+                    .unwrap();
+                return;
+            }
+
+            let task_status = task.status();
+
+            sqlx::query!(
+                "INSERT INTO tasks (user_id, content, tasks_status) VALUES ($1, $2, $3)",
+                uuid::Uuid::parse_str(&task.user_id()).unwrap(),
+                task.content(),
+                task_status as _
+            )
+            .execute(&mut *transaction)
+            .await
+            .map_err(|e| {
+                eprintln!("Failed to create task: {}", e);
+                error::ErrorInternalServerError("Failed to save task.")
+            })
+            .map_err(|e| eprintln!("Failed to create a task: {}", e))
+            .unwrap();
+
+            transaction
+                .commit()
+                .await
+                .map_err(|_| {
+                    error::ErrorInternalServerError("Failed to commit database transaction.")
+                })
+                .map_err(|e| eprintln!("Failed to commit the transaction: {}", e))
+                .unwrap()
         })
     }
 }

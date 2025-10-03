@@ -12,7 +12,7 @@ use crate::{
         create_user_session_use_case::CreateUserSessionUseCase,
         get_signed_url_use_case::GetSignedUrlUseCase,
         get_user_profile_use_case::GetUserProfileUseCase,
-        register_user_use_case::RegisterUserUseCase,
+        register_user_use_case::RegisterUserUseCase, save_task_use_case::SaveTaskUseCase,
     },
     infra::{
         db::sqlx_repository::SqlxRepository,
@@ -20,6 +20,7 @@ use crate::{
             create_user_session_controller::create_user_session_controller,
             get_user_profile_controller::get_user_profile_controller,
             register_user_controller::register_user_controller,
+            save_task_controller::save_task_controller,
         },
         middlewares::check_request_jwt::check_request_jwt,
     },
@@ -48,6 +49,7 @@ pub fn run(listener: TcpListener) -> Result<Server, std::io::Error> {
         web::Data::new(CreateUserSessionUseCase::new(Arc::new(SqlxRepository {})));
     let get_user_profile_use_case =
         web::Data::new(GetUserProfileUseCase::new(Arc::new(SqlxRepository {})));
+    let save_task_use_case = web::Data::new(SaveTaskUseCase::new(Arc::new(SqlxRepository {})));
 
     let server = HttpServer::new(move || {
         let cors = Cors::default()
@@ -66,10 +68,16 @@ pub fn run(listener: TcpListener) -> Result<Server, std::io::Error> {
                     .wrap(from_fn(check_request_jwt))
                     .service(get_user_profile_controller),
             )
+            .service(
+                web::scope("/tasks")
+                    .wrap(from_fn(check_request_jwt))
+                    .service(save_task_controller),
+            )
             .app_data(register_user_use_case.clone())
             .app_data(create_user_session_use_case.clone())
             .app_data(get_signed_url_use_case.clone())
             .app_data(get_user_profile_use_case.clone())
+            .app_data(save_task_use_case.clone())
     })
     .listen(listener)?
     .run();

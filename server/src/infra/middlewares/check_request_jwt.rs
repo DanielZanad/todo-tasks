@@ -1,12 +1,12 @@
 use std::collections::HashSet;
 
 use actix_web::{
-    App, Error, HttpMessage,
+    Error, HttpMessage,
     body::MessageBody,
     dev::{ServiceRequest, ServiceResponse},
     error,
     http::header,
-    middleware::{Next, from_fn},
+    middleware::Next,
 };
 use jsonwebtoken::{DecodingKey, Header, decode};
 use serde::{Deserialize, Serialize};
@@ -30,7 +30,6 @@ impl Token {
 }
 
 /// A struct to hold the authenticated user's ID.
-/// We'll insert this into request extensions.
 #[derive(Clone)]
 pub struct AuthenticatedUser {
     pub id: String,
@@ -42,13 +41,13 @@ pub async fn check_request_jwt(
 ) -> Result<ServiceResponse<impl MessageBody>, Error> {
     // Attempt to get the "Authorization" header from the request.
     let header = req.headers().get(header::AUTHORIZATION);
-
     // --- Pre-processing ---
     // This part runs before the request is passed to the handler.
 
     match header {
         Some(header) => {
             let jwt_secret = std::env::var("JWT_SECRET").expect("JWT_SECRET must be set");
+            println!("Token header {:?}", header.to_str().unwrap_or(""));
 
             let mut validation = jsonwebtoken::Validation::new(jsonwebtoken::Algorithm::HS512);
 

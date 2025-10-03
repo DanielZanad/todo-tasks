@@ -41,7 +41,7 @@ server.get("/uploads/:fileKey", async (req, rep) => {
       Bucket: "todo-tasks",
       Key: fileKey,
     }),
-    { expiresIn: 600 }
+    { expiresIn: 60000 }
   );
 
   return { url: signedUrl };
