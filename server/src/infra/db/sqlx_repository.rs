@@ -1,14 +1,18 @@
-use actix_web::error;
+use actix_web::{cookie::time::macros::date, error};
+use sqlx::types::time::{Date, PrimitiveDateTime};
 
 use crate::{
     app::{
-        entities::user::User,
+        entities::{task_status::TaskStatus, user::User},
         repositories::{
             task_repository::TaskRepository,
             user_repository::{UserProfile, UserRepository},
         },
     },
-    infra::db::configuration::get_configuration,
+    infra::db::{
+        configuration::get_configuration,
+        mappers::sqlx_task_mapper::{chrono_to_primitive, to_domain},
+    },
 };
 
 pub struct SqlxRepository {}
@@ -210,11 +214,13 @@ impl TaskRepository for SqlxRepository {
             }
 
             let task_status = task.status();
+            let task_date = chrono_to_primitive(*task.task_date());
 
             sqlx::query!(
-                "INSERT INTO tasks (user_id, content, tasks_status) VALUES ($1, $2, $3)",
+                "INSERT INTO tasks (user_id, content, task_date ,tasks_status) VALUES ($1, $2, $3, $4)",
                 uuid::Uuid::parse_str(&task.user_id()).unwrap(),
                 task.content(),
+                task_date,
                 task_status as _
             )
             .execute(&mut *transaction)
@@ -234,6 +240,97 @@ impl TaskRepository for SqlxRepository {
                 })
                 .map_err(|e| eprintln!("Failed to commit the transaction: {}", e))
                 .unwrap()
+        })
+    }
+
+    fn list_all_tasks<'a>(
+        &'a self,
+        user_id: String,
+    ) -> std::pin::Pin<Box<dyn Future<Output = Vec<crate::app::entities::task::Task>> + Send + 'a>>
+    {
+        Box::pin(async move {
+            let db_conn = get_configuration().await.unwrap();
+
+            let mut transaction = db_conn
+                .begin()
+                .await
+                .map_err(|_| {
+                    error::ErrorInternalServerError("Failed to start database transaction.")
+                })
+                .map_err(|e| eprint!("Failed to start a transaction: {}", e))
+                .unwrap();
+
+            use uuid::Uuid;
+
+            // Convert user_id from String to Uuid
+            let user_uuid = match Uuid::parse_str(&user_id) {
+                Ok(uuid) => uuid,
+                Err(e) => {
+                    eprintln!("Invalid UUID: {}", e);
+                    transaction.rollback().await.ok();
+                    return Vec::new();
+                }
+            };
+
+            // Explicitly select columns and map tasks_status to an integer
+            let rows = sqlx::query!(
+                r#"
+                SELECT id, user_id, content, task_date, created_at ,tasks_status as "tasks_status: TaskStatus"
+                FROM tasks
+                WHERE user_id = $1
+                "#,
+                user_uuid
+            )
+            .fetch_all(&mut *transaction)
+            .await
+            .map_err(|e| {
+                eprintln!("Failed to fetch tasks: {}", e);
+                error::ErrorInternalServerError("Failed to list tasks.")
+            })
+            .map_err(|e| eprintln!("Failed to fetch tasks: {}", e))
+            .unwrap_or_default();
+
+            transaction
+                .commit()
+                .await
+                .map_err(|_| {
+                    error::ErrorInternalServerError("Failed to commit database transaction.")
+                })
+                .map_err(|e| eprintln!("Failed to commit the transaction: {}", e))
+                .unwrap();
+
+            rows.into_iter()
+                .map(|row| {
+                    // let task_status;
+                    // match row.tasks_status {
+                    //     TaskStatus::ToStart => task_status = TaskStatus::ToStart,
+                    //     TaskStatus::Started => task_status = TaskStatus::Started,
+                    //     TaskStatus::Completed => task_status = TaskStatus::Completed,
+                    // }
+
+                    let created_at_utc = to_domain(row.created_at.unwrap());
+                    let task_date_utc = to_domain(row.task_date);
+
+                    // Convert LocalResult<chrono::DateTime<Utc>> to chrono::DateTime<Local>
+                    let created_at = match created_at_utc {
+                        chrono::LocalResult::Single(dt_utc) => dt_utc.with_timezone(&chrono::Local),
+                        _ => chrono::Local::now(), // fallback or handle error as needed
+                    };
+                    let task_date = match task_date_utc {
+                        chrono::LocalResult::Single(dt_utc) => dt_utc.with_timezone(&chrono::Local),
+                        _ => chrono::Local::now(), // fallback or handle error as needed
+                    };
+
+                    crate::app::entities::task::Task::new_with_id(
+                        row.id.to_string(),
+                        row.user_id.to_string(),
+                        row.content,
+                        row.tasks_status,
+                        task_date,
+                        created_at,
+                    )
+                })
+                .collect()
         })
     }
 }

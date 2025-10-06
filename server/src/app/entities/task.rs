@@ -1,22 +1,25 @@
 use chrono::{DateTime, Local};
+use serde::{Deserialize, Serialize};
 
 use crate::app::entities::task_status::TaskStatus;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Task {
     id: Option<String>,
     user_id: String,
     content: String,
     status: TaskStatus,
+    task_date: DateTime<Local>,
     created_at: DateTime<Local>,
 }
 
 impl Task {
-    pub fn new(user_id: String, content: String) -> Self {
+    pub fn new(user_id: String, content: String, task_date: DateTime<Local>) -> Self {
         Self {
             id: None,
             user_id,
             content,
+            task_date,
             status: TaskStatus::ToStart,
             created_at: Local::now(),
         }
@@ -27,6 +30,7 @@ impl Task {
         user_id: String,
         content: String,
         status: TaskStatus,
+        task_date: DateTime<Local>,
         created_at: DateTime<Local>,
     ) -> Self {
         Self {
@@ -34,6 +38,7 @@ impl Task {
             user_id,
             content,
             status,
+            task_date,
             created_at,
         }
     }
@@ -58,6 +63,10 @@ impl Task {
         &self.created_at
     }
 
+    pub fn task_date(&self) -> &DateTime<Local> {
+        &self.task_date
+    }
+
     pub fn set_id(&mut self, id: String) {
         self.id = Some(id);
     }
@@ -72,5 +81,9 @@ impl Task {
 
     pub fn set_status(&mut self, status: TaskStatus) {
         self.status = status;
+    }
+
+    pub fn set_task_date(&mut self, task_date: DateTime<Local>) {
+        self.task_date = task_date;
     }
 }

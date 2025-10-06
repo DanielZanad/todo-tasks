@@ -1,9 +1,6 @@
 #[cfg(test)]
 mod tests {
-    use std::future::Future;
-    use std::pin::Pin;
-    use std::ptr::eq;
-    use std::sync::{Arc, Mutex};
+    use std::sync::Arc;
 
     use argon2::{
         Argon2,
@@ -12,7 +9,6 @@ mod tests {
 
     use crate::app::entities::user::User;
     use crate::app::repositories::mock_user_repository::MockUserRepository;
-    use crate::app::repositories::user_repository::UserRepository;
     use crate::app::use_cases::create_user_session_use_case::{
         CreateUserSessionError, CreateUserSessionRequest, CreateUserSessionUseCase,
     };

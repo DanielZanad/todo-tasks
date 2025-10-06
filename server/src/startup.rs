@@ -12,13 +12,16 @@ use crate::{
         create_user_session_use_case::CreateUserSessionUseCase,
         get_signed_url_use_case::GetSignedUrlUseCase,
         get_user_profile_use_case::GetUserProfileUseCase,
-        register_user_use_case::RegisterUserUseCase, save_task_use_case::SaveTaskUseCase,
+        list_all_tasks_use_case::{self, ListAllTasksUseCase},
+        register_user_use_case::RegisterUserUseCase,
+        save_task_use_case::SaveTaskUseCase,
     },
     infra::{
         db::sqlx_repository::SqlxRepository,
         http::{
             create_user_session_controller::create_user_session_controller,
             get_user_profile_controller::get_user_profile_controller,
+            list_all_user_tasks_controller::list_all_user_tasks_controller,
             register_user_controller::register_user_controller,
             save_task_controller::save_task_controller,
         },
@@ -50,6 +53,8 @@ pub fn run(listener: TcpListener) -> Result<Server, std::io::Error> {
     let get_user_profile_use_case =
         web::Data::new(GetUserProfileUseCase::new(Arc::new(SqlxRepository {})));
     let save_task_use_case = web::Data::new(SaveTaskUseCase::new(Arc::new(SqlxRepository {})));
+    let list_all_tasks_use_case =
+        web::Data::new(ListAllTasksUseCase::new(Arc::new(SqlxRepository {})));
 
     let server = HttpServer::new(move || {
         let cors = Cors::default()
@@ -71,13 +76,15 @@ pub fn run(listener: TcpListener) -> Result<Server, std::io::Error> {
             .service(
                 web::scope("/tasks")
                     .wrap(from_fn(check_request_jwt))
-                    .service(save_task_controller),
+                    .service(save_task_controller)
+                    .service(list_all_user_tasks_controller),
             )
             .app_data(register_user_use_case.clone())
             .app_data(create_user_session_use_case.clone())
             .app_data(get_signed_url_use_case.clone())
             .app_data(get_user_profile_use_case.clone())
             .app_data(save_task_use_case.clone())
+            .app_data(list_all_tasks_use_case.clone())
     })
     .listen(listener)?
     .run();

@@ -1,4 +1,5 @@
 use actix_web::{Error, HttpResponse, post, web};
+use chrono::{DateTime, Local};
 use serde::{Deserialize, Serialize};
 
 use crate::{
@@ -9,6 +10,7 @@ use crate::{
 #[derive(Deserialize, Serialize, Debug)]
 struct Body {
     content: String,
+    task_date: String,
 }
 
 #[post("/save")]
@@ -17,8 +19,15 @@ pub async fn save_task_controller(
     request_body: web::Json<Body>,
     save_task_use_case: web::Data<SaveTaskUseCase>,
 ) -> Result<HttpResponse, Error> {
+    let task_date: DateTime<Local> = request_body
+        .task_date
+        .parse()
+        .expect("Failed to parse date");
+
+    println!("{:?}", task_date);
+
     let save_task_use_case_request =
-        SaveTaskRequest::new(user.id.clone(), request_body.content.to_owned());
+        SaveTaskRequest::new(user.id.clone(), request_body.content.to_owned(), task_date);
 
     save_task_use_case.execute(save_task_use_case_request).await;
 
