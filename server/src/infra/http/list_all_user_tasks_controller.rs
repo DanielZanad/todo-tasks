@@ -1,12 +1,7 @@
-use actix_web::{Error, HttpResponse, get, post, rt::task, web};
-use chrono::{DateTime, Local};
-use serde::{Deserialize, Serialize};
+use actix_web::{Error, HttpResponse, get, web};
 
 use crate::{
-    app::use_cases::{
-        list_all_tasks_use_case::{ListAllTasksRequest, ListAllTasksUseCase},
-        save_task_use_case::{SaveTaskRequest, SaveTaskUseCase},
-    },
+    app::use_cases::list_all_tasks_use_case::{ListAllTasksRequest, ListAllTasksUseCase},
     infra::middlewares::check_request_jwt::AuthenticatedUser,
 };
 

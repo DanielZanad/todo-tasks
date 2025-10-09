@@ -1,5 +1,5 @@
 use actix_web::{Error, HttpResponse, post, web};
-use chrono::{DateTime, Local};
+use chrono::{DateTime, Local, Utc};
 use serde::{Deserialize, Serialize};
 
 use crate::{
@@ -19,7 +19,7 @@ pub async fn save_task_controller(
     request_body: web::Json<Body>,
     save_task_use_case: web::Data<SaveTaskUseCase>,
 ) -> Result<HttpResponse, Error> {
-    let task_date: DateTime<Local> = request_body
+    let task_date: DateTime<Utc> = request_body
         .task_date
         .parse()
         .expect("Failed to parse date");

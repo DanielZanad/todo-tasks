@@ -1,5 +1,4 @@
-use actix_web::{cookie::time::macros::date, error};
-use sqlx::types::time::{Date, PrimitiveDateTime};
+use actix_web::error;
 
 use crate::{
     app::{
@@ -216,6 +215,8 @@ impl TaskRepository for SqlxRepository {
             let task_status = task.status();
             let task_date = chrono_to_primitive(*task.task_date());
 
+            println!("Primitive Date time {:?}", task_date);
+
             sqlx::query!(
                 "INSERT INTO tasks (user_id, content, task_date ,tasks_status) VALUES ($1, $2, $3, $4)",
                 uuid::Uuid::parse_str(&task.user_id()).unwrap(),
@@ -313,13 +314,16 @@ impl TaskRepository for SqlxRepository {
 
                     // Convert LocalResult<chrono::DateTime<Utc>> to chrono::DateTime<Local>
                     let created_at = match created_at_utc {
-                        chrono::LocalResult::Single(dt_utc) => dt_utc.with_timezone(&chrono::Local),
-                        _ => chrono::Local::now(), // fallback or handle error as needed
+                        chrono::LocalResult::Single(dt_utc) => dt_utc.with_timezone(&chrono::Utc),
+                        _ => chrono::Utc::now(), // fallback or handle error as needed
                     };
+                    println!("created_at: {:?}", created_at);
                     let task_date = match task_date_utc {
-                        chrono::LocalResult::Single(dt_utc) => dt_utc.with_timezone(&chrono::Local),
-                        _ => chrono::Local::now(), // fallback or handle error as needed
+                        chrono::LocalResult::Single(dt_utc) => dt_utc.with_timezone(&chrono::Utc),
+                        _ => chrono::Utc::now(), // fallback or handle error as needed
                     };
+
+                    println!("Tasks_date: {:?}", task_date);
 
                     crate::app::entities::task::Task::new_with_id(
                         row.id.to_string(),

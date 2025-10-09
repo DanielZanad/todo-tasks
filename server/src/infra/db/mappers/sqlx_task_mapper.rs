@@ -31,7 +31,7 @@ pub fn to_domain(date: PrimitiveDateTime) -> LocalResult<DateTime<Utc>> {
     new_date
 }
 
-pub fn chrono_to_primitive(datetime: DateTime<Local>) -> PrimitiveDateTime {
+pub fn chrono_to_primitive(datetime: DateTime<Utc>) -> PrimitiveDateTime {
     let month = match datetime.month() {
         1 => Month::January,
         2 => Month::February,

@@ -1,17 +1,17 @@
 use std::sync::Arc;
 
-use chrono::{Date, DateTime, Local};
+use chrono::{Date, DateTime, Local, Utc};
 
 use crate::app::{entities::task::Task, repositories::task_repository::TaskRepository};
 
 pub struct SaveTaskRequest {
     pub user_id: String,
-    pub task_date: DateTime<Local>,
+    pub task_date: DateTime<Utc>,
     pub content: String,
 }
 
 impl SaveTaskRequest {
-    pub fn new(user_id: String, content: String, task_date: DateTime<Local>) -> Self {
+    pub fn new(user_id: String, content: String, task_date: DateTime<Utc>) -> Self {
         Self {
             user_id,
             content,

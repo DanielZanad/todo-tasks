@@ -1,6 +1,5 @@
 use std::sync::Arc;
 
-use actix_web::rt::task;
 use serde::{Deserialize, Serialize};
 
 use crate::app::{entities::task::Task, repositories::task_repository::TaskRepository};
