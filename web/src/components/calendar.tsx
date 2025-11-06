@@ -1,4 +1,3 @@
-import React from "react";
 import { dayjs } from "@/lib/dayjs";
 import {
   Carousel,
@@ -7,8 +6,13 @@ import {
   CarouselNext,
   CarouselPrevious,
 } from "./ui/carousel";
+import { useListUserTasks } from "@/http/use-list-user-tasks";
+import { DayCard } from "./dayCard";
 
 export const Calendar = () => {
+  const { data } = useListUserTasks();
+  console.log(data);
+
   const currentYear = dayjs().year();
   const currentMonthIndex = dayjs().month();
 
@@ -17,15 +21,6 @@ export const Calendar = () => {
   });
 
   const weekdays = ["D", "S", "T", "Q", "Q", "S", "S"];
-
-  // Mock event data
-  const events = Array.from({ length: 14 }, (_, i) => ({
-    id: i,
-    color: "bg-green-500",
-  }));
-  const displayLimit = 9;
-  const visibleEvents = events.slice(0, displayLimit);
-  const remainingCount = events.length - displayLimit;
 
   return (
     <div className="p-8 md:p-12">
@@ -49,49 +44,39 @@ export const Calendar = () => {
                   </h2>
 
                   <div className="grid grid-cols-7 gap-2 mb-2 text-center font-semibold text-gray-500">
-                    {weekdays.map((day) => (
-                      <div key={day}>{day}</div>
+                    {weekdays.map((day, i) => (
+                      <div key={`weekday-${i}`}>{day}</div>
                     ))}
                   </div>
 
-                  <div className="grid grid-cols-7 gap-2">
+                  <div className="grid grid-cols-7 gap-2 ">
                     {Array.from({ length: firstDayOfWeek }).map((_, i) => (
                       <div key={`empty-${i}`} />
                     ))}
+                    {data &&
+                      days.map((day) => {
+                        const dayObject = monthDate.date(day);
+                        const dayLetter = dayObject.format("dddd").charAt(0);
 
-                    {days.map((day) => {
-                      const dayObject = monthDate.date(day);
-                      const dayLetter = dayObject.format("dddd").charAt(0);
+                        const dayTasks = data.filter((task) =>
+                          dayjs(task.task_date).isSame(dayObject, "day")
+                        );
 
-                      return (
-                        <div
-                          key={day}
-                          className="flex flex-col gap-2 w-full h-36 p-2 md:p-4 border shadow-lg rounded-xl"
-                        >
-                          <div className="flex flex-row justify-between items-center">
-                            <span className="text-lg font-bold">{day}</span>
+                        const displayLimit = 9;
+                        const visibleTasks = dayTasks.slice(0, displayLimit);
+                        const remainingCount =
+                          dayTasks.length - visibleTasks.length;
 
-                            <span className="text-sm font-semibold text-gray-400">
-                              {dayLetter}
-                            </span>
-                          </div>
-
-                          <div className="grid grid-cols-3 md:grid-cols-5 h-full gap-1">
-                            {visibleEvents.map((event) => (
-                              <div
-                                key={event.id}
-                                className={`w-3 h-3 rounded-full ${event.color}`}
-                              ></div>
-                            ))}
-                            {remainingCount > 0 && (
-                              <div className="flex items-center justify-center w-3 h-3 text-xs font-semibold">
-                                +{remainingCount}
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      );
-                    })}
+                        return (
+                          <DayCard
+                            allTasks={data}
+                            day={day}
+                            dayLetter={dayLetter}
+                            visibleTasks={visibleTasks}
+                            remainingCount={remainingCount}
+                          />
+                        );
+                      })}
                   </div>
                 </div>
               </CarouselItem>

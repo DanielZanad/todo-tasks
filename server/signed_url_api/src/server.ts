@@ -8,6 +8,7 @@ import { z } from "zod";
 const server = fastify();
 
 server.post("/uploads", async (req, rep) => {
+  console.log(env);
   const uploadBodySchema = z.object({
     fileKey: z.string(),
     contentType: z.string().regex(/\w+\/[-+.\w]+/),
