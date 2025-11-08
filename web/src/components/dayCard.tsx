@@ -7,15 +7,14 @@ import {
   DialogTitle,
   DialogDescription,
 } from "./ui/dialog";
-import { Calendar } from "./ui/calendar";
+// Note: You might need to import dayjs if you prefer its .isSame() method
+// import { dayjs } from "@/lib/dayjs";
 import z from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Form, FormControl, FormField, FormItem, FormLabel } from "./ui/form";
-import { useState } from "react";
+import { Form, FormControl, FormField, FormItem } from "./ui/form";
 import { Input } from "./ui/input";
 import { Button } from "./ui/button";
-import { ArrowLeft, ArrowRight } from "lucide-react";
 import { TaskCard } from "./taskCard";
 import { useCreateTask } from "@/http/use-create-task";
 
@@ -67,12 +66,28 @@ export const DayCard = ({
     },
   });
 
+  const currentCardDate = new Date(
+    Number(year),
+    monthMap[month.toLowerCase()],
+    day
+  );
+
+  const tasksForThisDay = allTasks.filter((task) => {
+    const taskDate = new Date(task.task_date);
+
+    return (
+      taskDate.getFullYear() === currentCardDate.getFullYear() &&
+      taskDate.getMonth() === currentCardDate.getMonth() &&
+      taskDate.getDate() === currentCardDate.getDate()
+    );
+  });
+
   async function handleCreateTask(task: sendTaskSchemaData) {
-    const date = new Date(Number(year), monthMap[month.toLowerCase()], day);
-    const result = await createTask({
+    await createTask({
       content: task.content,
-      task_date: date,
+      task_date: currentCardDate,
     });
+    form.reset();
   }
 
   return (
@@ -132,14 +147,14 @@ export const DayCard = ({
             </div>
           </form>
         </Form>
-        {allTasks.map((task) => {
+
+        {tasksForThisDay.map((task) => {
           return (
             <TaskCard
+              key={task.id}
+              id={task.id}
               task={task.content}
               color={task.color}
-              day={day}
-              month={month}
-              year={year}
             />
           );
         })}

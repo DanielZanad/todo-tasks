@@ -11,7 +11,6 @@ import { DayCard } from "./dayCard";
 
 export const Calendar = () => {
   const { data } = useListUserTasks();
-  console.log(data);
 
   const currentYear = dayjs().year();
   const currentMonthIndex = dayjs().month();

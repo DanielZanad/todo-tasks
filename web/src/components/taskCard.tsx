@@ -1,14 +1,12 @@
 import { ArrowLeft, ArrowRight } from "lucide-react";
 import { Button } from "./ui/button";
 import { twMerge } from "tailwind-merge";
+import { useUpdateTaskStatus } from "@/http/use-update-task-status";
 
 interface TaskCardProps {
   id: string;
   task: string;
   color: string;
-  day: number;
-  month: string;
-  year: string;
 }
 
 const colorVariants = {
@@ -17,34 +15,27 @@ const colorVariants = {
   "bg-green-500": "border-green-500",
   "bg-yellow-500": "border-yellow-500",
 };
-const monthMap: Record<string, number> = {
-  janeiro: 0,
-  fevereiro: 1,
-  março: 2,
-  abril: 3,
-  maio: 4,
-  junho: 5,
-  julho: 6,
-  agosto: 7,
-  setembro: 8,
-  outubro: 9,
-  novembro: 10,
-  dezembro: 11,
-};
 
-export const TaskCard = ({
-  task,
-  color,
-  day,
-  month,
-  year,
-  id,
-}: TaskCardProps) => {
+export const TaskCard = ({ task, color, id }: TaskCardProps) => {
+  const { mutateAsync: updateTaskStatus } = useUpdateTaskStatus();
+
   const borderColorClass =
     colorVariants[color as keyof typeof colorVariants] || "border-gray-200";
 
-  const date = new Date(Number(year), monthMap[month.toLowerCase()], day);
-  console.log(date);
+  async function handleNextStatus() {
+    await updateTaskStatus({
+      action: "next",
+      task_id: id,
+    });
+  }
+
+  async function handlePreviousStatus() {
+    await updateTaskStatus({
+      action: "previous",
+      task_id: id,
+    });
+  }
+
   return (
     <div className="w-full flex justify-center mt-6">
       <div
@@ -56,6 +47,7 @@ export const TaskCard = ({
         <Button
           variant="secondary"
           className="p-2 hover:bg-muted rounded-lg transition cursor-pointer"
+          onClick={handlePreviousStatus}
         >
           <ArrowLeft className="h-6 w-6" />
         </Button>
@@ -67,6 +59,7 @@ export const TaskCard = ({
         <Button
           variant="secondary"
           className="p-2 hover:bg-muted rounded-lg transition cursor-pointer"
+          onClick={handleNextStatus}
         >
           <ArrowRight className="h-6 w-6" />
         </Button>
