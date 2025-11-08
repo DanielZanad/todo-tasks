@@ -40,6 +40,7 @@ export function useListUserTasks() {
           id: tasks.id,
           user_id: tasks.user_id,
           status: tasks.status,
+          content: tasks.content,
           color,
           task_date,
           created_at,

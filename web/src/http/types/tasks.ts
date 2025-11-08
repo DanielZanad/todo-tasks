@@ -1,6 +1,7 @@
 export type Task = {
   id: string;
   user_id: string;
+  content: string;
   status: string;
   color: string;
   task_date: Date;

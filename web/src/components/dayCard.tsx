@@ -11,23 +11,41 @@ import { Calendar } from "./ui/calendar";
 import z from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Form } from "./ui/form";
+import { Form, FormControl, FormField, FormItem, FormLabel } from "./ui/form";
 import { useState } from "react";
 import { Input } from "./ui/input";
 import { Button } from "./ui/button";
 import { ArrowLeft, ArrowRight } from "lucide-react";
+import { TaskCard } from "./taskCard";
+import { useCreateTask } from "@/http/use-create-task";
 
 interface DayCardProps {
   allTasks: Task[];
   day: number;
+  month: string;
+  year: string;
   dayLetter: string;
   visibleTasks: Task[];
   remainingCount: number;
 }
 
+const monthMap: Record<string, number> = {
+  janeiro: 0,
+  fevereiro: 1,
+  março: 2,
+  abril: 3,
+  maio: 4,
+  junho: 5,
+  julho: 6,
+  agosto: 7,
+  setembro: 8,
+  outubro: 9,
+  novembro: 10,
+  dezembro: 11,
+};
+
 const sendNewTask = z.object({
   content: z.string().min(3, { message: "min 3 characters" }),
-  task_date: z.date(),
 });
 
 type sendTaskSchemaData = z.infer<typeof sendNewTask>;
@@ -38,16 +56,25 @@ export const DayCard = ({
   dayLetter,
   visibleTasks,
   remainingCount,
+  month,
+  year,
 }: DayCardProps) => {
+  const { mutateAsync: createTask } = useCreateTask();
   const form = useForm<sendTaskSchemaData>({
     resolver: zodResolver(sendNewTask),
     defaultValues: {
       content: "",
-      task_date: new Date(),
     },
   });
 
-  const [date, setDate] = useState<Date | undefined>(new Date());
+  async function handleCreateTask(task: sendTaskSchemaData) {
+    const date = new Date(Number(year), monthMap[month.toLowerCase()], day);
+    const result = await createTask({
+      content: task.content,
+      task_date: date,
+    });
+  }
+
   return (
     <Dialog>
       <DialogTrigger className="flex flex-col gap-2 w-full h-36 p-2 md:p-4 border cursor-pointer hover:border-accent  shadow-lg rounded-xl">
@@ -83,61 +110,39 @@ export const DayCard = ({
         </DialogHeader>
 
         <Form {...form}>
-          <form className="grid md:grid-cols-2 gap-6">
-            <Calendar
-              mode="single"
-              selected={date}
-              onSelect={setDate}
-              className="rounded-lg border"
-            />
-
+          <form
+            onSubmit={form.handleSubmit(handleCreateTask)}
+            className="flex w-full flex-col gap-6"
+          >
             <div className="flex flex-col gap-4">
-              <Input
-                placeholder="Nova tarefa..."
-                {...form.register("content")}
-              />
+              <FormField
+                control={form.control}
+                name="content"
+                render={({ field }) => {
+                  return (
+                    <FormItem>
+                      <FormControl>
+                        <Input placeholder="Nova tarefa..." {...field} />
+                      </FormControl>
+                    </FormItem>
+                  );
+                }}
+              ></FormField>
               <Button className="w-full">Adicionar</Button>
             </div>
           </form>
         </Form>
-        <div className="w-full flex justify-center mt-6">
-          <div className="flex items-center justify-between w-full h-[200px] border rounded-xl p-4 shadow-sm">
-            <Button
-              variant="secondary"
-              className="p-2 hover:bg-muted rounded-lg transition"
-            >
-              <ArrowLeft className="h-6 w-6" />
-            </Button>
-
-            <div className="flex items-center justify-center text-center text-sm text-muted-foreground cursor-pointer">
-              {/* Put content inside here later (task list, message, etc.) */}
-              No tasks selected
-            </div>
-
-            <Button
-              variant="secondary"
-              className="p-2 hover:bg-muted rounded-lg transition cursor-pointer"
-            >
-              <ArrowRight className="h-6 w-6" />
-            </Button>
-          </div>
-        </div>
-        <div className="w-full flex justify-center mt-6">
-          <div className="flex items-center justify-between w-full h-[250px] border rounded-xl p-4 shadow-sm">
-            <button className="p-2 hover:bg-muted rounded-lg transition">
-              <ArrowLeft className="h-6 w-6" />
-            </button>
-
-            <div className="flex items-center justify-center text-center text-sm text-muted-foreground">
-              {/* Put content inside here later (task list, message, etc.) */}
-              No tasks selected
-            </div>
-
-            <button className="p-2 hover:bg-muted rounded-lg transition">
-              <ArrowRight className="h-6 w-6" />
-            </button>
-          </div>
-        </div>
+        {allTasks.map((task) => {
+          return (
+            <TaskCard
+              task={task.content}
+              color={task.color}
+              day={day}
+              month={month}
+              year={year}
+            />
+          );
+        })}
       </DialogContent>
     </Dialog>
   );

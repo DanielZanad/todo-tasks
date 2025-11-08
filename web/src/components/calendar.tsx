@@ -71,6 +71,8 @@ export const Calendar = () => {
                           <DayCard
                             allTasks={data}
                             day={day}
+                            month={monthDate.format("MMMM")}
+                            year={monthDate.format("YYYY")}
                             dayLetter={dayLetter}
                             visibleTasks={visibleTasks}
                             remainingCount={remainingCount}
