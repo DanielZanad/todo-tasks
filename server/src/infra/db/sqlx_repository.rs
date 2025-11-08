@@ -244,7 +244,7 @@ impl TaskRepository for SqlxRepository {
         })
     }
 
-    fn list_all_tasks<'a>(
+    fn list_all<'a>(
         &'a self,
         user_id: String,
     ) -> std::pin::Pin<Box<dyn Future<Output = Vec<crate::app::entities::task::Task>> + Send + 'a>>
@@ -335,6 +335,108 @@ impl TaskRepository for SqlxRepository {
                     )
                 })
                 .collect()
+        })
+    }
+
+    fn find_by_id<'a>(
+        &'a self,
+        task_id: String,
+    ) -> std::pin::Pin<Box<dyn Future<Output = Option<crate::app::entities::task::Task>> + Send + 'a>>
+    {
+        Box::pin(async move {
+            let db_conn = get_configuration().await.unwrap();
+
+            let mut transaction = db_conn
+                .begin()
+                .await
+                .map_err(|_| {
+                    error::ErrorInternalServerError("Failed to start database transaction.")
+                })
+                .map_err(|e| eprint!("Failed to start a transaction: {}", e))
+                .unwrap();
+
+            use uuid::Uuid;
+
+            let task_uuid = match Uuid::parse_str(&task_id) {
+                Ok(uuid) => uuid,
+                Err(e) => {
+                    eprintln!("Invalid UUID: {}", e);
+                    transaction.rollback().await.ok();
+                    return None;
+                }
+            };
+            let row = sqlx::query!(
+                r#"
+                SELECT id, user_id, content, task_date, created_at, tasks_status as "tasks_status: TaskStatus"
+                FROM tasks
+                WHERE id = $1
+                "#,
+                task_uuid
+            )
+            .fetch_optional(&mut *transaction)
+            .await
+            .map_err(|e| {
+                eprintln!("Failed to fetch task by ID: {}", e);
+                error::ErrorInternalServerError("Failed to find task by ID.")
+            })
+            .map_err(|e| eprintln!("Failed to fetch task by ID: {}", e))
+            .unwrap_or_default();
+
+            transaction
+                .commit()
+                .await
+                .map_err(|_| {
+                    error::ErrorInternalServerError("Failed to commit database transaction.")
+                })
+                .map_err(|e| eprintln!("Failed to commit the transaction: {}", e))
+                .unwrap();
+
+            row.map(|row| {
+                let created_at_utc = to_domain(row.created_at.unwrap());
+                let task_date_utc = to_domain(row.task_date);
+
+                let created_at = match created_at_utc {
+                    chrono::LocalResult::Single(dt_utc) => dt_utc.with_timezone(&chrono::Utc),
+                    _ => chrono::Utc::now(),
+                };
+                let task_date = match task_date_utc {
+                    chrono::LocalResult::Single(dt_utc) => dt_utc.with_timezone(&chrono::Utc),
+                    _ => chrono::Utc::now(),
+                };
+
+                crate::app::entities::task::Task::new_with_id(
+                    row.id.to_string(),
+                    row.user_id.to_string(),
+                    row.content,
+                    row.tasks_status,
+                    task_date,
+                    created_at,
+                )
+            })
+        })
+    }
+
+    fn update_status<'a>(
+        &'a self,
+        user_id: String,
+        task_id: String,
+        status: TaskStatus,
+    ) -> std::pin::Pin<Box<dyn Future<Output = ()> + Send + 'a>> {
+        Box::pin(async move {
+            let db_conn = get_configuration().await.unwrap();
+            sqlx::query!(
+                "UPDATE tasks SET tasks_status = $1 WHERE id = $2 AND user_id = $3",
+                status as _,
+                uuid::Uuid::parse_str(&task_id).unwrap(),
+                uuid::Uuid::parse_str(&user_id).unwrap()
+            )
+            .execute(&db_conn)
+            .await
+            .map_err(|e| {
+                eprintln!("Failed to update task status: {}", e);
+                error::ErrorInternalServerError("Failed to update task status.")
+            })
+            .unwrap();
         })
     }
 }

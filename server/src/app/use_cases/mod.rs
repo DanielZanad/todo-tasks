@@ -7,3 +7,4 @@ pub mod list_all_tasks_use_case;
 pub mod register_user_use_case;
 pub mod register_user_use_case_test;
 pub mod save_task_use_case;
+pub mod update_task_status_use_case;

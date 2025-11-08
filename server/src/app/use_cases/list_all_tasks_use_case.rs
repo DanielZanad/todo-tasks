@@ -35,8 +35,7 @@ impl ListAllTasksUseCase {
     }
 
     pub async fn execute(&self, request: ListAllTasksRequest) -> ListAllTasksResponse {
-        let tasks =
-            ListAllTasksResponse::new(self.task_repository.list_all_tasks(request.user_id).await);
+        let tasks = ListAllTasksResponse::new(self.task_repository.list_all(request.user_id).await);
         tasks
     }
 }

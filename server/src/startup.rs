@@ -15,6 +15,7 @@ use crate::{
         list_all_tasks_use_case::{self, ListAllTasksUseCase},
         register_user_use_case::RegisterUserUseCase,
         save_task_use_case::SaveTaskUseCase,
+        update_task_status_use_case::UpdateTaskStatusUseCase,
     },
     infra::{
         db::sqlx_repository::SqlxRepository,
@@ -24,6 +25,7 @@ use crate::{
             list_all_user_tasks_controller::list_all_user_tasks_controller,
             register_user_controller::register_user_controller,
             save_task_controller::save_task_controller,
+            update_task_status_controller::update_task_status_controller,
         },
         middlewares::check_request_jwt::check_request_jwt,
     },
@@ -55,6 +57,8 @@ pub fn run(listener: TcpListener) -> Result<Server, std::io::Error> {
     let save_task_use_case = web::Data::new(SaveTaskUseCase::new(Arc::new(SqlxRepository {})));
     let list_all_tasks_use_case =
         web::Data::new(ListAllTasksUseCase::new(Arc::new(SqlxRepository {})));
+    let update_task_status_use_case =
+        web::Data::new(UpdateTaskStatusUseCase::new(Arc::new(SqlxRepository {})));
 
     let server = HttpServer::new(move || {
         let cors = Cors::default()
@@ -77,7 +81,8 @@ pub fn run(listener: TcpListener) -> Result<Server, std::io::Error> {
                 web::scope("/tasks")
                     .wrap(from_fn(check_request_jwt))
                     .service(save_task_controller)
-                    .service(list_all_user_tasks_controller),
+                    .service(list_all_user_tasks_controller)
+                    .service(update_task_status_controller),
             )
             .app_data(register_user_use_case.clone())
             .app_data(create_user_session_use_case.clone())
@@ -85,6 +90,7 @@ pub fn run(listener: TcpListener) -> Result<Server, std::io::Error> {
             .app_data(get_user_profile_use_case.clone())
             .app_data(save_task_use_case.clone())
             .app_data(list_all_tasks_use_case.clone())
+            .app_data(update_task_status_use_case.clone())
     })
     .listen(listener)?
     .run();

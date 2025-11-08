@@ -3,3 +3,4 @@ pub mod get_user_profile_controller;
 pub mod list_all_user_tasks_controller;
 pub mod register_user_controller;
 pub mod save_task_controller;
+pub mod update_task_status_controller;
